@@ -4,7 +4,7 @@ Handles weight initialization, forward pass and gradient computation
 """
 
 import numpy as np
-from .activations import get_activation, softmax
+from .activation import get_activation, softmax
 
 
 class Layer:
@@ -79,17 +79,17 @@ class Layer:
         args:
             delta        : gradient from next layer, shape (batch_size, output_size)
             weight_decay : L2 regularization lambda
-        Returns:
+        returns:
             delta_prev: gradient to pass back, shape (batch_size, input_size)
         """
         batch_size = self.input.shape[0]
 
-        # Gradient w.r.t. W (averaged over batch) + L2 penalty
+        #gradient w.r.t. W (averaged over batch) + L2 penalty
         self.grad_W = (self.input.T @ delta) / batch_size + weight_decay * self.W
 
-        # Gradient w.r.t. b (averaged over batch)
+        #gradient w.r.t. b (averaged over batch)
         self.grad_b = np.sum(delta, axis=0, keepdims=True) / batch_size
 
-        # Pass gradient to previous layer
+        #pass gradient to previous layer
         delta_prev = delta @ self.W.T
         return delta_prev
