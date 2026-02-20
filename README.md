@@ -3,8 +3,8 @@
 A fully configurable MLP built using **only NumPy** to classify MNIST and Fashion-MNIST.
 
 ## Links
-- **W&B Report:** [Add your W&B report link here]
-- **GitHub:** [This repository]
+- **W&B Report:** 
+- **GitHub:** https://github.com/shadab007-byte/da6401_assignment_1
 
 ## Project Structure
 ```
