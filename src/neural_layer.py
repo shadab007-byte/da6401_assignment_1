@@ -4,7 +4,7 @@ Handles weight initialization, forward pass and gradient computation
 """
 
 import numpy as np
-from .activation import get_activation, softmax
+from .activations import get_activation, softmax
 
 
 class Layer:
