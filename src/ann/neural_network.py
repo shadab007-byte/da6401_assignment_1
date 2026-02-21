@@ -1,141 +1,145 @@
-
 import numpy as np
 import os
 import json
+
 from .neural_layer import Layer
 from .objective_functions import get_loss
 from .activations import get_activation
 
 
 class NeuralNetwork:
+   
     def __init__(self, cli_args):
         """
-        Args:
-            cli_args: Command-line arguments (argparse Namespace) containing:
-                      - num_layers   : number of hidden layers
-                      - hidden_size  : neurons per hidden layer (list or int)
-                      - activation   : 'relu', 'sigmoid', or 'tanh'
-                      - weight_init  : 'xavier' or 'random'
-                      - loss         : 'cross_entropy' or 'mse'
-                      - weight_decay : L2 regularization coefficient
-                      - optimizer    : optimizer name string
-                      - learning_rate: float
+        Required fields in cli_args:
+            num_layers   (int)       : number of hidden layers
+            hidden_size  (list/int)  : neurons per hidden layer
+            activation   (str)       : 'relu', 'sigmoid', or 'tanh'
+            weight_init  (str)       : 'xavier' or 'random'
+            loss         (str)       : 'cross_entropy' or 'mse'
+            weight_decay (float)     : L2 regularization lambda
         """
-        self.cli_args    = cli_args
+        self.cli_args     = cli_args
         self.weight_decay = getattr(cli_args, 'weight_decay', 0.0)
+        self.optimizer    = None   #set externally before training
 
-        hidden_size_arg = cli_args.hidden_size
-        num_layers      = cli_args.num_layers
+        #build hidden_sizes lis
+        raw    = cli_args.hidden_size
+        n_lay  = cli_args.num_layers
 
-        if isinstance(hidden_size_arg, list):
-            if len(hidden_size_arg) == 1:
-                self.hidden_sizes = [hidden_size_arg[0]] * num_layers
-            elif len(hidden_size_arg) == num_layers:
-                self.hidden_sizes = hidden_size_arg
+        if isinstance(raw, list):
+            if len(raw) == 1:
+                self.hidden_sizes = [raw[0]] * n_lay
+            elif len(raw) == n_lay:
+                self.hidden_sizes = raw
             else:
-                raise ValueError("hidden_size must have 1 value or num_layers values.")
+                raise ValueError(
+                    f"hidden_size has {len(raw)} values but num_layers={n_lay}. "
+                    "Provide 1 value (same for all) or exactly num_layers values."
+                )
         else:
-            self.hidden_sizes = [hidden_size_arg] * num_layers
+            self.hidden_sizes = [raw] * n_lay
 
-        self.input_size  = 784    #MNIST/Fashion-MNIST flattened
-        self.output_size = 10     #10 classes
-        self.activation  = cli_args.activation
-        self.weight_init = cli_args.weight_init
+        self.input_size  = 784
+        self.output_size = 10
         self.loss_fn     = get_loss(cli_args.loss)
 
-        #build layer stack: input → hidden layers → output (softmax)
-        self.layers = []
+        #build layer stack
+        # sizes = [784, h1, h2, ..., hN, 10]
         sizes = [self.input_size] + self.hidden_sizes + [self.output_size]
 
+        self.layers = []
         for i in range(len(sizes) - 1):
-            act = "softmax" if i == len(sizes) - 2 else self.activation
+            is_output = (i == len(sizes) - 2)
+            act = "softmax" if is_output else cli_args.activation
             self.layers.append(
                 Layer(
-                    input_size=sizes[i],
-                    output_size=sizes[i + 1],
-                    activation=act,
-                    weight_init=self.weight_init,
+                    input_size  = sizes[i],
+                    output_size = sizes[i + 1],
+                    activation  = act,
+                    weight_init = cli_args.weight_init,
                 )
             )
 
-   
     def forward(self, X):
-        
+
         a = X
         for layer in self.layers:
             a = layer.forward(a)
-       
-        return self.layers[-1].z   #shape: (batch_size, 10)
+        # Return pre-activation logits of output layer (not softmax probabilities)
+        return self.layers[-1].z
 
     def backward(self, y_true, y_pred):
-        
-        #compute loss and initial gradient at output logits
+    
+        # Compute loss + initial delta at output logits
         loss, delta = self.loss_fn(y_pred, y_true)
-        self._last_loss = loss
+        self._last_loss = float(loss)
 
-        #backprop through layers (last → first)
+        # Backprop: last layer → first layer
         for i in reversed(range(len(self.layers))):
             layer = self.layers[i]
             if i == len(self.layers) - 1:
-                #output layer: delta already combines softmax + loss derivative
-                delta = layer.backward(delta, self.weight_decay)
+                delta = layer.backward(delta)
             else:
-                #hidden layers: multiply by activation derivative
-                act_deriv  = layer.activation_deriv(layer.z)
+                #chain rule 
+                act_deriv    = layer.activation_deriv(layer.z)
                 delta_hidden = delta * act_deriv
-                delta = layer.backward(delta_hidden, self.weight_decay)
+                delta        = layer.backward(delta_hidden)
 
-        #return gradients as lists (matches skeleton return signature)
         grad_w = [layer.grad_W for layer in self.layers]
         grad_b = [layer.grad_b for layer in self.layers]
         return grad_w, grad_b
 
-    
     def update_weights(self):
         self.optimizer.update(self.layers)
 
-    def train(self, X_train, y_train, epochs, batch_size):
-       
+    def train(self, X_train, y_train_oh, epochs, batch_size):
+        
+        if self.optimizer is None:
+            raise ValueError("Set model.optimizer before calling train()!")
         history = {'train_loss': [], 'train_acc': []}
         N = X_train.shape[0]
+        use_nag = getattr(self.optimizer, 'is_nag', False)
 
         for epoch in range(1, epochs + 1):
-            # Shuffle data each epoch
-            idx = np.random.permutation(N)
-            X_shuf, y_shuf = X_train[idx], y_train[idx]
+            # Shuffle training data each epoch
+            idx    = np.random.permutation(N)
+            X_shuf = X_train[idx]
+            y_shuf = y_train_oh[idx]
 
             epoch_losses = []
 
             for start in range(0, N, batch_size):
-                end   = min(start + batch_size, N)
-                X_b   = X_shuf[start:end]
-                y_b   = y_shuf[start:end]
+                end = min(start + batch_size, N)
+                Xb  = X_shuf[start:end]
+                yb  = y_shuf[start:end]
 
-                #forward
-                logits = self.forward(X_b)
-                #backward
-                self.backward(y_b, logits)
-                #update
+                if use_nag:
+                    self.optimizer.apply_lookahead(self.layers)
+
+                #forward at (lookahead for NAG, current W for others)
+                logits = self.forward(Xb)
+
+                #backward: gradient computed at current W (lookahead for NAG)
+                self.backward(yb, logits)
+
+                #update weights (for NAG: uses W_original + new velocity)
                 self.update_weights()
 
                 epoch_losses.append(self._last_loss)
 
             avg_loss = float(np.mean(epoch_losses))
-            preds    = np.argmax(self.forward(X_train), axis=1)
 
-            
-            if y_train.ndim == 2:
-                labels = np.argmax(y_train, axis=1)
-            else:
-                labels = y_train
-            acc = float(np.mean(preds == labels))
+            #accuracy on full training set 
+            preds  = np.argmax(self.forward(X_train), axis=1)
+            labels = np.argmax(y_train_oh, axis=1)
+            acc    = float(np.mean(preds == labels))
 
             history['train_loss'].append(avg_loss)
             history['train_acc'].append(acc)
 
         return history
 
-    
     def evaluate(self, X, y):
         
         logits = self.forward(X)
@@ -145,7 +149,7 @@ class NeuralNetwork:
             labels   = np.argmax(y, axis=1)
         else:
             labels   = y
-            y_onehot = np.zeros((len(y), 10))
+            y_onehot = np.zeros((len(y), self.output_size), dtype=np.float32)
             y_onehot[np.arange(len(y)), y] = 1.0
 
         loss, _ = self.loss_fn(logits, y_onehot)
@@ -158,15 +162,22 @@ class NeuralNetwork:
             'predictions': preds,
         }
 
-   
+    def predict(self, X):
+        """Return predicted class indices for input X."""
+        logits = self.forward(X)
+        return np.argmax(logits, axis=1)
+
     def save_weights(self, filepath):
         
         weights = {}
         for i, layer in enumerate(self.layers):
             weights[f"layer_{i}_W"] = layer.W
             weights[f"layer_{i}_b"] = layer.b
-        os.makedirs(os.path.dirname(filepath) if os.path.dirname(filepath) else ".", exist_ok=True)
+        dirpath = os.path.dirname(filepath)
+        if dirpath:
+            os.makedirs(dirpath, exist_ok=True)
         np.save(filepath, weights, allow_pickle=True)
+        print(f"[INFO] Saved weights → {filepath}")
 
     def load_weights(self, filepath):
         
@@ -174,18 +185,20 @@ class NeuralNetwork:
         for i, layer in enumerate(self.layers):
             layer.W = weights[f"layer_{i}_W"]
             layer.b = weights[f"layer_{i}_b"]
+        print(f"[INFO] Loaded weights ← {filepath}")
 
-    def predict(self, X):
-        logits = self.forward(X)
-        return np.argmax(logits, axis=1)
-
+    
     def get_gradient_norms(self):
-        return [(f"layer_{i+1}_grad_norm", float(np.linalg.norm(l.grad_W)))
-                for i, l in enumerate(self.layers)]
+       
+        return [
+            (f"layer_{i+1}_grad_norm", float(np.linalg.norm(layer.grad_W)))
+            for i, layer in enumerate(self.layers)
+        ]
 
     def get_activation_stats(self):
+        
         stats = {}
-        for i, layer in enumerate(self.layers[:-1]):
+        for i, layer in enumerate(self.layers[:-1]):   # skip output layer
             if layer.a is not None:
                 stats[f"layer_{i+1}_dead_frac"] = float(np.mean(layer.a == 0))
                 stats[f"layer_{i+1}_act_mean"]  = float(np.mean(np.abs(layer.a)))
