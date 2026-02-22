@@ -11,7 +11,7 @@ def sigmoid(z):
 
 def sigmoid_derivative(z):
     d = sigmoid(z)
-    return d(1.0 - d)
+    return d*(1.0 - d)
 
 # tanh(Z)
 def tanh(z):   
