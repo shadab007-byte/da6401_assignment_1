@@ -106,37 +106,18 @@ def parse_arguments():
 
 
 def main():
-    """
-    Main training function.
-
-    Flow:
-        1. Parse arguments
-        2. Load dataset (train/val/test split)
-        3. Build NeuralNetwork from args
-        4. Build optimizer from args
-        5. Initialize W&B run
-        6. Training loop:
-             - For each epoch:
-                 - Mini-batch forward + backward + weight update
-                 - NAG: apply_lookahead() before forward, handled in update()
-                 - Evaluate on train and val sets
-                 - Log metrics to W&B
-                 - Save model if val F1 improved
-        7. Final evaluation on test set
-        8. Finish W&B run
-    """
     args = parse_arguments()
 
-    #1. Load dataset
+    #load dataset
     X_train, y_train, X_val, y_val, X_test, y_test = load_dataset(args.dataset)
     y_train_oh = to_onehot(y_train)   # one-hot for training
     y_val_oh   = to_onehot(y_val)
     y_test_oh  = to_onehot(y_test)
 
-    #2. Build model
+    #build model
     model = NeuralNetwork(cli_args=args)
 
-    #3. Build optimizer
+    #build optimizer
     #pass only the kwargs each optimizer actually uses
     opt_kwargs = dict(
         learning_rate=args.learning_rate,
@@ -155,7 +136,7 @@ def main():
     model.optimizer = get_optimizer(args.optimizer, **opt_kwargs)
     use_nag = model.optimizer.is_nag   # flag: True only for NAG
 
-    #4. W&B init
+    #W&B init
     use_wandb = not args.no_wandb
     if use_wandb:
         wandb.init(
@@ -165,7 +146,7 @@ def main():
             config=vars(args),
         )
 
-    #5. Training loop
+    #training loop
     best_val_f1 = -1.0
 
     for epoch in range(1, args.epochs + 1):
@@ -250,7 +231,7 @@ def main():
             with open(args.config_save_path, 'w') as f:
                 json.dump(save_config, f, indent=2)
 
-    #6. Final test evaluation (using best saved weights) ──
+    #final test evaluation (using best saved weights)
     model.load_weights(args.model_save_path)
     test_result  = model.evaluate(X_test, y_test_oh)
     test_metrics = compute_metrics(y_test, test_result['predictions'])
