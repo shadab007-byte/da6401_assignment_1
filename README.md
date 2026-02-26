@@ -70,4 +70,4 @@ python src/inference.py \
 | Dataset       | Accuracy | F1    |
 |---------------|----------|-------|
 | MNIST         | ~97.7%   | ~97.7%|
-| Fashion-MNIST | ~88.8%   | ~88.7%|
+| Fashion-MNIST | ~88.5%   | ~88.5%|
