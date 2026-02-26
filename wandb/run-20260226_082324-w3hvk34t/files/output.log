@@ -1,3 +1,0 @@
-  Ep   1 | loss=0.2595 | val_acc=0.9603
-  Ep   5 | loss=0.0447 | val_acc=0.9737
-  Ep  10 | loss=0.0226 | val_acc=0.9765

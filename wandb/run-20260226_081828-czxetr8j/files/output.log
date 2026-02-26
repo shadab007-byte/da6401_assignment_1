@@ -1,2 +1,0 @@
-/tmp/ipython-input-660/3660775820.py:22: UserWarning: set_ticklabels() should only be used with a fixed number of ticks, i.e. after set_ticks() or using a FixedLocator.
-  axes[0].set_xticklabels([fashion_cls[i] for i in unique], rotation=45, ha='right')
