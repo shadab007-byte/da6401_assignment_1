@@ -69,5 +69,5 @@ python src/inference.py \
 ## Results
 | Dataset       | Accuracy | F1    |
 |---------------|----------|-------|
-| MNIST         | ~98.2%   | ~98.2%|
-| Fashion-MNIST | ~88.5%   | ~88.3%|
+| MNIST         | ~97.54%   | ~97.51%|
+| Fashion-MNIST | ~88.8%   | ~88.7%|
