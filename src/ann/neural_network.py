@@ -1,3 +1,4 @@
+
 import numpy as np
 import os
 import json
@@ -8,22 +9,15 @@ from .activations import get_activation
 
 
 class NeuralNetwork:
-   
+    
+
     def __init__(self, cli_args):
-        """
-        Required fields in cli_args:
-            num_layers   (int)       : number of hidden layers
-            hidden_size  (list/int)  : neurons per hidden layer
-            activation   (str)       : 'relu', 'sigmoid', or 'tanh'
-            weight_init  (str)       : 'xavier' or 'random'
-            loss         (str)       : 'cross_entropy' or 'mse'
-            weight_decay (float)     : L2 regularization lambda
-        """
+       
         self.cli_args     = cli_args
         self.weight_decay = getattr(cli_args, 'weight_decay', 0.0)
-        self.optimizer    = None   #set externally before training
+        self.optimizer    = None  
 
-        #build hidden_sizes lis
+        #build hidden_sizes list
         raw    = cli_args.hidden_size
         n_lay  = cli_args.num_layers
 
@@ -70,18 +64,20 @@ class NeuralNetwork:
         return self.layers[-1].z
 
     def backward(self, y_true, y_pred):
-    
-        # Compute loss + initial delta at output logits
+       
+        #compute loss + initial delta at output logits
         loss, delta = self.loss_fn(y_pred, y_true)
         self._last_loss = float(loss)
 
-        # Backprop: last layer → first layer
+        #backprop: last layer → first layer
         for i in reversed(range(len(self.layers))):
             layer = self.layers[i]
             if i == len(self.layers) - 1:
+                
+                # delta from loss_fn 
                 delta = layer.backward(delta)
             else:
-                #chain rule 
+                #hidden layer: chain rule through activation
                 act_deriv    = layer.activation_deriv(layer.z)
                 delta_hidden = delta * act_deriv
                 delta        = layer.backward(delta_hidden)
@@ -90,19 +86,22 @@ class NeuralNetwork:
         grad_b = [layer.grad_b for layer in self.layers]
         return grad_w, grad_b
 
+
     def update_weights(self):
         self.optimizer.update(self.layers)
+
 
     def train(self, X_train, y_train_oh, epochs, batch_size):
         
         if self.optimizer is None:
             raise ValueError("Set model.optimizer before calling train()!")
+
         history = {'train_loss': [], 'train_acc': []}
         N = X_train.shape[0]
         use_nag = getattr(self.optimizer, 'is_nag', False)
 
         for epoch in range(1, epochs + 1):
-            # Shuffle training data each epoch
+            #shuffle training data each epoch
             idx    = np.random.permutation(N)
             X_shuf = X_train[idx]
             y_shuf = y_train_oh[idx]
@@ -115,12 +114,13 @@ class NeuralNetwork:
                 yb  = y_shuf[start:end]
 
                 if use_nag:
+                    #NAG Step A: shift to lookahead BEFORE forward
                     self.optimizer.apply_lookahead(self.layers)
 
                 #forward at (lookahead for NAG, current W for others)
                 logits = self.forward(Xb)
 
-                #backward: gradient computed at current W (lookahead for NAG)
+                #backward: gradient computed at current W (= lookahead for NAG)
                 self.backward(yb, logits)
 
                 #update weights (for NAG: uses W_original + new velocity)
@@ -130,7 +130,7 @@ class NeuralNetwork:
 
             avg_loss = float(np.mean(epoch_losses))
 
-            #accuracy on full training set 
+            #accuracy on full training set (using current weights)
             preds  = np.argmax(self.forward(X_train), axis=1)
             labels = np.argmax(y_train_oh, axis=1)
             acc    = float(np.mean(preds == labels))
@@ -139,7 +139,9 @@ class NeuralNetwork:
             history['train_acc'].append(acc)
 
         return history
-
+ 
+    #EVALUATE
+    
     def evaluate(self, X, y):
         
         logits = self.forward(X)
@@ -162,13 +164,35 @@ class NeuralNetwork:
             'predictions': preds,
         }
 
+    
+    #PREDICT
+    
+
     def predict(self, X):
         """Return predicted class indices for input X."""
         logits = self.forward(X)
         return np.argmax(logits, axis=1)
 
-    def save_weights(self, filepath):
+    
+    #SAVE / LOAD
+    
+
+    def get_weights(self):
         
+        weights = {}
+        for i, layer in enumerate(self.layers):
+            weights[f"layer_{i}_W"] = layer.W.copy()
+            weights[f"layer_{i}_b"] = layer.b.copy()
+        return weights
+
+    def set_weights(self, weights):
+        
+        for i, layer in enumerate(self.layers):
+            layer.W = weights[f"layer_{i}_W"].copy()
+            layer.b = weights[f"layer_{i}_b"].copy()
+
+    def save_weights(self, filepath):
+        """Save all layer W and b to a .npy file."""
         weights = {}
         for i, layer in enumerate(self.layers):
             weights[f"layer_{i}_W"] = layer.W
@@ -180,7 +204,7 @@ class NeuralNetwork:
         print(f"[INFO] Saved weights → {filepath}")
 
     def load_weights(self, filepath):
-        
+        """Load weights from a .npy file produced by save_weights()."""
         weights = np.load(filepath, allow_pickle=True).item()
         for i, layer in enumerate(self.layers):
             layer.W = weights[f"layer_{i}_W"]
@@ -188,6 +212,9 @@ class NeuralNetwork:
         print(f"[INFO] Loaded weights ← {filepath}")
 
     
+    #W&B LOGGING HELPERS
+    
+
     def get_gradient_norms(self):
        
         return [
