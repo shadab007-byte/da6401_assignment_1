@@ -77,32 +77,12 @@ def parse_arguments():
     return parser.parse_args()
 
 def load_model(model_path):
-    
-    data = np.load(model_path, allow_pickle=True).item()
+"""
+Load trained model from disk.
+"""
+data = np.load(model_path, allow_pickle=True).item()
+return data
 
-    # Find config — check same dir as model, then src/
-    model_dir   = os.path.dirname(model_path) or 'models'
-    config_path = os.path.join(model_dir, 'best_config.json')
-
-    if os.path.exists(config_path):
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-        print(f"[INFO] Config loaded from: {config_path}")
-    else:
-        print("[WARN] Config not found. Using default architecture.")
-
-    import argparse as _ap
-    model_args = _ap.Namespace(
-        num_layers   = len(config['hidden_sizes']) if config else 3,
-        hidden_size  = config['hidden_sizes']      if config else [128, 128, 128],
-        activation   = config.get('activation',   'relu'),
-        weight_init  = config.get('weight_init',  'xavier'),
-        loss         = config.get('loss',          'cross_entropy'),
-        weight_decay = config.get('weight_decay',  0.0001),
-    )
-    model = NeuralNetwork(cli_args=model_args)
-    model.set_weights(data)
-    return model, config
 
 
 def evaluate_model(model, X_test, y_test):
