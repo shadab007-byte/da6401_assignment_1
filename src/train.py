@@ -18,18 +18,14 @@ def parse_arguments():
     """
     
 
-    Arguments match BOTH the skeleton TODOs and the PDF spec:
+    Arguments :
     - dataset       : 'mnist' or 'fashion_mnist'            [-d]
     - epochs        : Number of training epochs             [-e]
     - batch_size    : Mini-batch size                       [-b]
     - learning_rate : Learning rate for optimizer           [-lr]
     - optimizer     : sgd/momentum/nag/rmsprop/adam/nadam   [-o]
     - num_layers    : Number of hidden layers               [-nhl]
-      (skeleton calls this 'hidden_layers', PDF calls it 'num_layers'
-       — we use num_layers as it maps to PDF grading)
     - hidden_size   : Number of neurons per hidden layer    [-sz]
-      (skeleton calls this 'num_neurons', PDF calls it 'hidden_size'
-       — we use hidden_size as it maps to PDF grading)
     - activation    : relu / sigmoid / tanh                 [-a]
     - loss          : cross_entropy / mse                   [-l]
     - weight_init   : random or xavier                      [-w_i]
@@ -57,7 +53,7 @@ def parse_arguments():
 
     #optimizer
     parser.add_argument('-o', '--optimizer', type=str, default='adam',
-                        choices=['sgd', 'momentum', 'nag', 'rmsprop', 'adam', 'nadam'],
+                        choices=['sgd', 'momentum', 'nag', 'rmsprop'],
                         help='Optimizer to use')
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001,
                         help='Learning rate for optimizer')
