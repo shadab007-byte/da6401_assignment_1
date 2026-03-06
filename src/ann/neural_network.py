@@ -186,36 +186,11 @@ class NeuralNetwork:
         return weights
 
     def set_weights(self, weights):
-        """Set weights - handles multiple key formats from autograder."""
         if isinstance(weights, np.ndarray):
             weights = weights.item()
-        
         for i, layer in enumerate(self.layers):
-            # Try all possible key formats
-            W, b = None, None
-            
-            # Format 1: layer_0_W (our format)
-            if f"layer_{i}_W" in weights:
-                W = weights[f"layer_{i}_W"]
-                b = weights[f"layer_{i}_b"]
-            # Format 2: W_0, b_0
-            elif f"W_{i}" in weights:
-                W = weights[f"W_{i}"]
-                b = weights[f"b_{i}"]
-            # Format 3: integer keys 0, 1, 2...
-            elif i in weights:
-                W = weights[i][0]
-                b = weights[i][1]
-            # Format 4: direct W and b if single layer
-            elif "W" in weights and i == 0:
-                W = weights["W"]
-                b = weights["b"]
-            
-            if W is not None:
-                layer.W = np.array(W).copy()
-                layer.b = np.array(b).copy()
-            else:
-                print(f"[WARN] Could not find weights for layer {i}")
+            layer.W = weights[f"layer_{i}_W"].copy()
+            layer.b = weights[f"layer_{i}_b"].copy()
             
     def save_weights(self, filepath):
         """Save all layer W and b to a .npy file."""
