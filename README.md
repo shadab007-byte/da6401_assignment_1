@@ -76,8 +76,9 @@ python src/inference.py \
 | Adam  | ReLU | 3 | 128 | 0.0005| 64  | 97.73% |
 
 ### Fashion-MNIST (Transfer from MNIST best configs)
+
 | Configuration | Test Accuracy | Test F1 |
 |--------------|--------------|---------|
-| cfg1-nadam-relu-3L128 | TBD after run | TBD |
-| cfg2-adam-relu-3L128  | TBD after run | TBD |
-| cfg3-adam-relu-3L128-lr5e4 | TBD after run | TBD |
+| cfg1-nadam-relu-3L128 | 87.40% | 87.23% |
+| cfg2-adam-relu-3L128  | 88.60% | 88.63% |
+| cfg3-adam-relu-3L128-lr5e4 | 88.70% | 88.68% |
