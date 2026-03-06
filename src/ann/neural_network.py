@@ -178,40 +178,33 @@ class NeuralNetwork:
     
 
     def get_weights(self):
-        
-        weights = {}
+        d = {}
         for i, layer in enumerate(self.layers):
-            weights[f"layer_{i}_W"] = layer.W.copy()
-            weights[f"layer_{i}_b"] = layer.b.copy()
-        return weights
-
-    def set_weights(self, weights):
-        if isinstance(weights, np.ndarray):
-            weights = weights.item()
+            d[f"W{i}"] = layer.W.copy()
+            d[f"b{i}"] = layer.b.copy()
+        return d
+    
+    def set_weights(self, weight_dict):
         for i, layer in enumerate(self.layers):
-            layer.W = weights[f"layer_{i}_W"].copy()
-            layer.b = weights[f"layer_{i}_b"].copy()
-            
+            w_key = f"W{i}"
+            b_key = f"b{i}"
+            if w_key in weight_dict:
+                layer.W = weight_dict[w_key].copy()
+            if b_key in weight_dict:
+                layer.b = weight_dict[b_key].copy()
+    
     def save_weights(self, filepath):
-        """Save all layer W and b to a .npy file."""
-        weights = {}
-        for i, layer in enumerate(self.layers):
-            weights[f"layer_{i}_W"] = layer.W
-            weights[f"layer_{i}_b"] = layer.b
+        weights = self.get_weights()
         dirpath = os.path.dirname(filepath)
         if dirpath:
             os.makedirs(dirpath, exist_ok=True)
         np.save(filepath, weights, allow_pickle=True)
         print(f"[INFO] Saved weights → {filepath}")
-
+    
     def load_weights(self, filepath):
-        """Load weights from a .npy file produced by save_weights()."""
         weights = np.load(filepath, allow_pickle=True).item()
-        for i, layer in enumerate(self.layers):
-            layer.W = weights[f"layer_{i}_W"]
-            layer.b = weights[f"layer_{i}_b"]
+        self.set_weights(weights)
         print(f"[INFO] Loaded weights ← {filepath}")
-
     
     #W&B LOGGING HELPERS
     
