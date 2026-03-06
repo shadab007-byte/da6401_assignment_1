@@ -4,6 +4,7 @@ matplotlib>=3.4.0
 
 # For data loading
 keras>=2.7.0
+tensorflow-cpu
 
 # Logging and experiment tracking
 wandb>=0.12.0
