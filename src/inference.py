@@ -51,7 +51,7 @@ def parse_arguments():
                         help='L2 weight decay')
     parser.add_argument('-o', '--optimizer', type=str,
                         default='adam',
-                        choices=['sgd', 'momentum', 'nag', 'rmsprop', 'adam', 'nadam'],
+                        choices=['sgd', 'momentum', 'nag', 'rmsprop'],
                         help='Optimizer used during training')
     parser.add_argument('-lr', '--learning_rate', type=float,
                         default=0.001,
