@@ -7,10 +7,10 @@ def load_dataset(name="fashion_mnist"):
     name = name.lower().replace("-", "_")
 
     if name == "mnist":
-        from keras.datasets import mnist
+        from tensorflow.keras.datasets import mnist
         (X_full, y_full), (X_test, y_test) = mnist.load_data()
     elif name == "fashion_mnist":
-        from keras.datasets import fashion_mnist
+        from tensorflow.keras.datasets import fashion_mnist
         (X_full, y_full), (X_test, y_test) = fashion_mnist.load_data()
     else:
         raise ValueError(f"Unknown dataset '{name}'. Choose 'mnist' or 'fashion_mnist'.")
