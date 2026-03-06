@@ -3,19 +3,19 @@ from sklearn.model_selection import train_test_split
 
 
 def load_dataset(name="fashion_mnist"):
-    
+
     name = name.lower().replace("-", "_")
 
     if name == "mnist":
-        from keras.datasets import mnist
+        from tensorflow.keras.datasets import mnist
         (X_full, y_full), (X_test, y_test) = mnist.load_data()
     elif name == "fashion_mnist":
-        from keras.datasets import fashion_mnist
+        from tensorflow.keras.datasets import fashion_mnist
         (X_full, y_full), (X_test, y_test) = fashion_mnist.load_data()
     else:
         raise ValueError(f"Unknown dataset '{name}'. Choose 'mnist' or 'fashion_mnist'.")
 
-    #flatten 28x28 → 784 and normalize to [0,1]
+    # flatten 28x28 → 784 and normalize to [0,1]
     X_full = X_full.reshape(-1, 784).astype(np.float32) / 255.0
     X_test = X_test.reshape(-1, 784).astype(np.float32) / 255.0
 
