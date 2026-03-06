@@ -18,7 +18,7 @@ def parse_arguments():
 
     #model path
     parser.add_argument('--model_path', type=str,
-                        default='models/best_model.npy',
+                        default='Models/best_model.npy',
                         help='Path to saved model weights (.npy) — use relative path')
 
     #dataset
@@ -77,25 +77,28 @@ def parse_arguments():
     return parser.parse_args()
 
 def load_model(model_path):
+    
     data = np.load(model_path, allow_pickle=True).item()
-    
-    # Load config from src/ folder
-    config_path = 'src/best_config.json'
-    if not os.path.exists(config_path):
-        config_path = os.path.join(os.path.dirname(model_path), 'best_config.json')
-    
-    with open(config_path) as f:
-        config = json.load(f)
-    print(f"[INFO] Config loaded from: {config_path}")
-    
+
+    # Find config — check same dir as model, then src/
+    model_dir   = os.path.dirname(model_path) or 'models'
+    config_path = os.path.join(model_dir, 'best_config.json')
+
+    if os.path.exists(config_path):
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+        print(f"[INFO] Config loaded from: {config_path}")
+    else:
+        print("[WARN] Config not found. Using default architecture.")
+
     import argparse as _ap
     model_args = _ap.Namespace(
-        num_layers   = len(config['hidden_sizes']),
-        hidden_size  = config['hidden_sizes'],
-        activation   = config.get('activation', 'relu'),
-        weight_init  = config.get('weight_init', 'xavier'),
-        loss         = config.get('loss', 'cross_entropy'),
-        weight_decay = config.get('weight_decay', 0.0001),
+        num_layers   = len(config['hidden_sizes']) if config else 3,
+        hidden_size  = config['hidden_sizes']      if config else [128, 128, 128],
+        activation   = config.get('activation',   'relu'),
+        weight_init  = config.get('weight_init',  'xavier'),
+        loss         = config.get('loss',          'cross_entropy'),
+        weight_decay = config.get('weight_decay',  0.0001),
     )
     model = NeuralNetwork(cli_args=model_args)
     model.set_weights(data)
