@@ -3,7 +3,7 @@
 A fully configurable MLP built using **only NumPy** to classify MNIST and Fashion-MNIST.
 
 ## Links
-- **W&B Report:** 
+- **W&B Report:** https://wandb.ai/iitm_assigment/da6401-assignment-1/reports/da6401_assignment1--VmlldzoxNjA0MjU1MA
 - **GitHub:** https://github.com/shadab007-byte/da6401_assignment_1
 
 ## Project Structure
@@ -79,6 +79,6 @@ python src/inference.py \
 
 | Configuration | Test Accuracy | Test F1 |
 |--------------|--------------|---------|
-| cfg1-nadam-relu-3L128 | 87.40% | 87.23% |
-| cfg2-adam-relu-3L128  | 88.60% | 88.63% |
-| cfg3-adam-relu-3L128-lr5e4 | 88.70% | 88.68% |
+| cfg1-nadam-relu-3L128 | 88.88% | 88.7% |
+| cfg2-adam-relu-3L128  | 87.83% | 87.73% |
+| cfg3-adam-relu-3L128-lr5e4 | 88.01% | 88.06% |
