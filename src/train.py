@@ -53,7 +53,7 @@ def parse_arguments():
 
     # optimizer
     parser.add_argument('-o', '--optimizer', type=str, default='nadam',
-                        choices=['sgd', 'momentum', 'nag', 'rmsprop'],
+                        choices=['sgd', 'momentum', 'nag', 'rmsprop', 'adam', 'nadam'],
                         help='Optimizer to use')
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001,
                         help='Learning rate for optimizer')
