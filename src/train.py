@@ -42,7 +42,7 @@ def parse_arguments():
     parser.add_argument('-l', '--loss', type=str, default='cross_entropy',
                         choices=['cross_entropy', 'mse'])
     parser.add_argument('-o', '--optimizer', type=str, default='adam',
-                        choices=['sgd', 'momentum', 'nag', 'rmsprop', 'adam', 'nadam'])
+                        choices=['sgd', 'momentum', 'nag', 'rmsprop'])
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001)
     parser.add_argument('-wd', '--weight_decay', type=float, default=0.0)
     parser.add_argument('--beta', type=float, default=0.9)
