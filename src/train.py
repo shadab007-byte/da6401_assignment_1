@@ -18,7 +18,11 @@ def parse_arguments():
     """
     
 
+<<<<<<< HEAD
     Arguments match BOTH the skeleton :
+=======
+    Arguments :
+>>>>>>> 015c7d3e5b5bdfb62e47d0c5ec03053c4f54610e
     - dataset       : 'mnist' or 'fashion_mnist'            [-d]
     - epochs        : Number of training epochs             [-e]
     - batch_size    : Mini-batch size                       [-b]
@@ -52,7 +56,7 @@ def parse_arguments():
                         help='Loss function: cross_entropy or mse')
 
     #optimizer
-    parser.add_argument('-o', '--optimizer', type=str, default='adam',
+    parser.add_argument('-o', '--optimizer', type=str, default='nadam',
                         choices=['sgd', 'momentum', 'nag', 'rmsprop'],
                         help='Optimizer to use')
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001,

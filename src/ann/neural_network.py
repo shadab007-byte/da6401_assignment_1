@@ -187,9 +187,18 @@ class NeuralNetwork:
 
     def set_weights(self, weights):
         
+        # If weights is a numpy array, convert to dict
+        if isinstance(weights, np.ndarray):
+            weights = weights.item()
+        
         for i, layer in enumerate(self.layers):
-            layer.W = weights[f"layer_{i}_W"].copy()
-            layer.b = weights[f"layer_{i}_b"].copy()
+            key_W = f"layer_{i}_W"
+            key_b = f"layer_{i}_b"
+            if key_W in weights:
+                layer.W = weights[key_W].copy()
+                layer.b = weights[key_b].copy()
+            else:
+                print(f"[WARN] Key {key_W} not found in weights dict")
 
     def save_weights(self, filepath):
         """Save all layer W and b to a .npy file."""

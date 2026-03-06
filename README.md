@@ -66,8 +66,19 @@ python src/inference.py \
 | Regularization | L2 weight decay |
 | Metrics        | Accuracy, Precision, Recall, F1-score |
 
-## Results
-| Dataset       | Accuracy | F1    |
-|---------------|----------|-------|
-| MNIST         | ~97.7%   | ~97.7%|
-| Fashion-MNIST | ~88.5%   | ~88.5%|
+## Experiment Results
+
+### MNIST (Best Configuration from Sweep)
+| Optimizer | Activation | Layers | Hidden Size | LR | Batch | Val Accuracy |
+|-----------|-----------|--------|-------------|-------|-------|-------------|
+| Nadam | ReLU | 3 | 128 | 0.001 | 128 | 97.78% |
+| Adam  | ReLU | 3 | 128 | 0.001 | 64  | 97.78% |
+| Adam  | ReLU | 3 | 128 | 0.0005| 64  | 97.73% |
+
+### Fashion-MNIST (Transfer from MNIST best configs)
+
+| Configuration | Test Accuracy | Test F1 |
+|--------------|--------------|---------|
+| cfg1-nadam-relu-3L128 | 87.40% | 87.23% |
+| cfg2-adam-relu-3L128  | 88.60% | 88.63% |
+| cfg3-adam-relu-3L128-lr5e4 | 88.70% | 88.68% |
