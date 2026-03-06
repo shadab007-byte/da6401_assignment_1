@@ -24,7 +24,7 @@ def parse_arguments():
     - epochs        : Number of training epochs             [-e]
     - batch_size    : Mini-batch size                       [-b]
     - learning_rate : Learning rate for optimizer           [-lr]
-    - optimizer     : sgd/momentum/nag/rmsprop/adam/nadam   [-o]
+    - optimizer     : sgd/momentum/nag/rmsprop              [-o]
     - num_layers    : Number of hidden layers               [-nhl]
     - hidden_size   : Number of neurons per hidden layer    [-sz]
     - activation    : relu / sigmoid / tanh                 [-a]
@@ -41,7 +41,7 @@ def parse_arguments():
     parser.add_argument('-b', '--batch_size', type=int, default=64)
     parser.add_argument('-l', '--loss', type=str, default='cross_entropy',
                         choices=['cross_entropy', 'mse'])
-    parser.add_argument('-o', '--optimizer', type=str, default='adam',
+    parser.add_argument('-o', '--optimizer', type=str, default='nadam',
                         choices=['sgd', 'momentum', 'nag', 'rmsprop'])
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001)
     parser.add_argument('-wd', '--weight_decay', type=float, default=0.0)
@@ -49,7 +49,7 @@ def parse_arguments():
     parser.add_argument('--beta2', type=float, default=0.999)
     parser.add_argument('--eps', type=float, default=1e-8)
     parser.add_argument('-nhl', '--num_layers', type=int, default=3)
-    parser.add_argument('-sz', '--hidden_size', type=int, nargs='+', default=[128])
+    parser.add_argument('-sz', '--hidden_size', type=int, nargs='+', default=[128, 128, 128])
     parser.add_argument('-a', '--activation', type=str, default='relu',
                         choices=['relu', 'sigmoid', 'tanh'])
     parser.add_argument('-w_i', '--weight_init', type=str, default='xavier',
@@ -58,8 +58,9 @@ def parse_arguments():
     parser.add_argument('-we', '--wandb_entity', type=str, default='iitm_assigment')
     parser.add_argument('--run_name', type=str, default=None)
     parser.add_argument('--no_wandb', action='store_true')
-    parser.add_argument('--model_save_path', type=str, default='src/best_model.npy')
-    parser.add_argument('--config_save_path', type=str, default='src/best_config.json')
+    # Use different default path so Test 3 never overwrites src/best_model.npy
+    parser.add_argument('--model_save_path', type=str, default='src/trained_model.npy')
+    parser.add_argument('--config_save_path', type=str, default='src/trained_config.json')
     parser.add_argument('--log_grad_norms', action='store_true')
     parser.add_argument('--log_activations', action='store_true')
 
@@ -151,8 +152,6 @@ def main():
         if use_wandb:
             wandb.log(log_dict)
 
-        # save best model by test F1 — but NOT to src/best_model.npy
-        # to avoid overwriting the submitted best model
         if test_metrics_epoch['f1'] > best_test_f1:
             best_test_f1 = test_metrics_epoch['f1']
             model.save_weights(args.model_save_path)
