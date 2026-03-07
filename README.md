@@ -41,8 +41,8 @@ pip install -r requirements.txt
 ```bash
 python src/train.py \
   -d fashion_mnist \
-  -e 15 -b 64 \
-  -o adam -lr 0.001 \
+  -e 15 -b 128 \
+  -o nadam -lr 0.001 \
   -nhl 3 -sz 128 \
   -a relu -l cross_entropy \
   -w_i xavier -wd 0.0001
