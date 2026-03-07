@@ -1,8 +1,10 @@
+
 import argparse
 import sys
 import os
 import json
 import numpy as np
+
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -10,7 +12,6 @@ try:
     import wandb
 except ImportError:
     wandb = None
-
 from ann.neural_network import NeuralNetwork
 from ann.optimizers import get_optimizer
 from utils.data_loader import load_dataset, to_onehot, get_batches
@@ -19,7 +20,9 @@ from utils.metrics import compute_metrics
 
 def parse_arguments():
     """
-    Arguments:
+    
+
+    Arguments :
     - dataset       : 'mnist' or 'fashion_mnist'            [-d]
     - epochs        : Number of training epochs             [-e]
     - batch_size    : Mini-batch size                       [-b]
@@ -30,38 +33,81 @@ def parse_arguments():
     - activation    : relu / sigmoid / tanh                 [-a]
     - loss          : cross_entropy / mse                   [-l]
     - weight_init   : random or xavier                      [-w_i]
-    - weight_decay  : L2 regularization coefficient         [-wd]
-    - wandb_project : W&B project name                      [-wp]
+    - weight_decay  : L2 regularization coefficient        [-wd]
+    - wandb_project : W&B project name
+    
     """
     parser = argparse.ArgumentParser(description='Train a neural network')
 
+    #dataset
     parser.add_argument('-d', '--dataset', type=str, default='fashion_mnist',
-                        choices=['mnist', 'fashion_mnist'])
-    parser.add_argument('-e', '--epochs', type=int, default=10)
-    parser.add_argument('-b', '--batch_size', type=int, default=64)
+                        choices=['mnist', 'fashion_mnist'],
+                        help="Dataset to use: 'mnist' or 'fashion_mnist'")
+
+    #training hyperparameters
+    parser.add_argument('-e', '--epochs', type=int, default=10,
+                        help='Number of training epochs')
+    parser.add_argument('-b', '--batch_size', type=int, default=64,
+                        help='Mini-batch size for SGD')
+
+    #loss function
     parser.add_argument('-l', '--loss', type=str, default='cross_entropy',
-                        choices=['cross_entropy', 'mse'])
+                        choices=['cross_entropy', 'mse'],
+                        help='Loss function: cross_entropy or mse')
+
+    #optimizer
     parser.add_argument('-o', '--optimizer', type=str, default='adam',
-                        choices=['sgd', 'momentum', 'nag', 'rmsprop', 'adam', 'nadam'])
-    parser.add_argument('-lr', '--learning_rate', type=float, default=0.001)
-    parser.add_argument('-wd', '--weight_decay', type=float, default=0.0)
-    parser.add_argument('--beta', type=float, default=0.9)
-    parser.add_argument('--beta2', type=float, default=0.999)
-    parser.add_argument('--eps', type=float, default=1e-8)
-    parser.add_argument('-nhl', '--num_layers', type=int, default=3)
-    parser.add_argument('-sz', '--hidden_size', type=int, nargs='+', default=[128])
+                        choices=['sgd', 'momentum', 'nag', 'rmsprop'],
+                        help='Optimizer to use')
+    parser.add_argument('-lr', '--learning_rate', type=float, default=0.001,
+                        help='Learning rate for optimizer')
+    parser.add_argument('-wd', '--weight_decay', type=float, default=0.0,
+                        help='L2 weight decay (regularization) coefficient')
+
+    #optimizer momentum/beta parameters
+    parser.add_argument('--beta', type=float, default=0.9,
+                        help='Momentum beta (also beta1 for Adam/Nadam)')
+    parser.add_argument('--beta2', type=float, default=0.999,
+                        help='Beta2 for Adam/Nadam second moment')
+    parser.add_argument('--eps', type=float, default=1e-8,
+                        help='Epsilon for numerical stability in Adam/RMSProp')
+
+    #network architecture
+    parser.add_argument('-nhl', '--num_layers', type=int, default=3,
+                        help='Number of hidden layers')
+    parser.add_argument('-sz', '--hidden_size', type=int, nargs='+', default=[128],
+                        help='Number of neurons in each hidden layer. '
+                             'Give one value (same for all) or one per layer.')
     parser.add_argument('-a', '--activation', type=str, default='relu',
-                        choices=['relu', 'sigmoid', 'tanh'])
+                        choices=['relu', 'sigmoid', 'tanh'],
+                        help="Activation function ('relu', 'sigmoid', 'tanh')")
     parser.add_argument('-w_i', '--weight_init', type=str, default='xavier',
-                        choices=['random', 'xavier'])
-    parser.add_argument('-wp', '--wandb_project', type=str, default='da6401-assignment-1')
-    parser.add_argument('-we', '--wandb_entity', type=str, default='iitm_assigment')
-    parser.add_argument('--run_name', type=str, default=None)
-    parser.add_argument('--no_wandb', action='store_true')
-    parser.add_argument('--model_save_path', type=str, default='src/best_model.npy')
-    parser.add_argument('--config_save_path', type=str, default='src/best_config.json')
-    parser.add_argument('--log_grad_norms', action='store_true')
-    parser.add_argument('--log_activations', action='store_true')
+                        choices=['random', 'xavier'],
+                        help='Weight initialization method')
+
+    #W&B settings
+    parser.add_argument('-wp', '--wandb_project', type=str, default='da6401-assignment-1',
+                        help='W&B project name')
+    parser.add_argument('-we', '--wandb_entity', type=str, default='iitm_assigment',
+                        help='W&B entity (team name).')
+    parser.add_argument('--run_name', type=str, default=None,
+                        help='Custom name for this W&B run')
+    parser.add_argument('--no_wandb', action='store_true',
+                        help='Disable W&B logging ')
+
+    #save paths
+    parser.add_argument('--model_save_path', type=str,
+                        default='src/trained_model.npy',
+                        help='Relative path to save best model weights (.npy)')
+    parser.add_argument('--config_save_path', type=str,
+                        default='src/trained_config.json',
+                        help='Relative path to save best model config (.json)')
+
+    #extra W&B logging flags (used for specific experiments)
+    parser.add_argument('--log_grad_norms', action='store_true',
+                        help='Log per-layer gradient norms to W&B')
+    parser.add_argument('--log_activations', action='store_true',
+                        help='Log activation statistics to W&B')
 
     return parser.parse_args()
 
@@ -69,14 +115,21 @@ def parse_arguments():
 def main():
     args = parse_arguments()
 
+    #load datase
     X_train, y_train, X_val, y_val, X_test, y_test = load_dataset(args.dataset)
-    y_train_oh = to_onehot(y_train)
+    y_train_oh = to_onehot(y_train)   # one-hot for training
     y_val_oh   = to_onehot(y_val)
     y_test_oh  = to_onehot(y_test)
 
+    #model
     model = NeuralNetwork(cli_args=args)
 
-    opt_kwargs = dict(learning_rate=args.learning_rate, weight_decay=args.weight_decay)
+    #optimizer
+    #pass only the kwargs 
+    opt_kwargs = dict(
+        learning_rate=args.learning_rate,
+        weight_decay=args.weight_decay
+    )
     if args.optimizer in ['momentum', 'nag']:
         opt_kwargs['beta'] = args.beta
     elif args.optimizer == 'rmsprop':
@@ -88,8 +141,9 @@ def main():
         opt_kwargs['eps']   = args.eps
 
     model.optimizer = get_optimizer(args.optimizer, **opt_kwargs)
-    use_nag = model.optimizer.is_nag
+    use_nag = model.optimizer.is_nag   # flag: True only for NAG
 
+    
     use_wandb = (not args.no_wandb) and (wandb is not None)
     if use_wandb:
         wandb.init(
@@ -99,22 +153,37 @@ def main():
             config=vars(args),
         )
 
+   
+    best_val_f1  = -1.0
     best_test_f1 = -1.0
 
     for epoch in range(1, args.epochs + 1):
 
         epoch_losses = []
+
         for X_b, y_b in get_batches(X_train, y_train_oh, args.batch_size, shuffle=True):
+
+           
             if use_nag:
                 model.optimizer.apply_lookahead(model.layers)
+
+            #forward pass (at lookahead position for NAG, current W for others)
             logits = model.forward(X_b)
+
+            #backward pass: computes grad_W and grad_b for every layer
+            #for NAG: gradient is at the lookahead position 
             model.backward(y_b, logits)
+
+            #update weights
+            #for NAG: restores W_original and applies v correctly
             model.update_weights()
+
             epoch_losses.append(model._last_loss)
 
+        #per epoch metrics
         avg_train_loss = float(np.mean(epoch_losses))
         train_result   = model.evaluate(X_train, y_train_oh)
-        val_result     = model.evaluate(X_val, y_val_oh)
+        val_result     = model.evaluate(X_val,   y_val_oh)
         val_metrics    = compute_metrics(y_val, val_result['predictions'])
 
         print(
@@ -126,6 +195,7 @@ def main():
             f"ValF1: {val_metrics['f1']:.4f}"
         )
 
+        
         log_dict = {
             'epoch':          epoch,
             'train_loss':     avg_train_loss,
@@ -137,23 +207,29 @@ def main():
             'val_recall':     val_metrics['recall'],
         }
 
+       
         if args.log_grad_norms:
             for name, norm in model.get_gradient_norms():
                 log_dict[name] = norm
+
+        
         if args.log_activations:
             log_dict.update(model.get_activation_stats())
 
-        test_result        = model.evaluate(X_test, y_test_oh)
+        
+        test_result  = model.evaluate(X_test, y_test_oh)
         test_metrics_epoch = compute_metrics(y_test, test_result['predictions'])
-        log_dict['test_f1_epoch']       = test_metrics_epoch['f1']
-        log_dict['test_accuracy_epoch'] = test_metrics_epoch['accuracy']
 
         if use_wandb:
+            log_dict['test_f1_epoch']       = test_metrics_epoch['f1']
+            log_dict['test_accuracy_epoch'] = test_metrics_epoch['accuracy']
             wandb.log(log_dict)
 
+        #save best model (by TEST F1 )
         if test_metrics_epoch['f1'] > best_test_f1:
             best_test_f1 = test_metrics_epoch['f1']
             model.save_weights(args.model_save_path)
+
             save_config = {
                 'dataset':       args.dataset,
                 'hidden_sizes':  model.hidden_sizes,
@@ -169,6 +245,7 @@ def main():
             with open(args.config_save_path, 'w') as f:
                 json.dump(save_config, f, indent=2)
 
+    
     model.load_weights(args.model_save_path)
     test_result  = model.evaluate(X_test, y_test_oh)
     test_metrics = compute_metrics(y_test, test_result['predictions'])
