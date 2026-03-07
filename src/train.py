@@ -7,7 +7,10 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-import wandb
+try:
+    import wandb
+except ImportError:
+    wandb = None
 from ann.neural_network import NeuralNetwork
 from ann.optimizers import get_optimizer
 from utils.data_loader import load_dataset, to_onehot, get_batches
@@ -93,10 +96,10 @@ def parse_arguments():
 
     #save paths
     parser.add_argument('--model_save_path', type=str,
-                        default='models/best_model.npy',
+                        default='src/trained_model.npy',
                         help='Relative path to save best model weights (.npy)')
     parser.add_argument('--config_save_path', type=str,
-                        default='models/best_config.json',
+                        default='src/trained_config.json',
                         help='Relative path to save best model config (.json)')
 
     #extra W&B logging flags (used for specific experiments)
@@ -140,7 +143,7 @@ def main():
     use_nag = model.optimizer.is_nag   # flag: True only for NAG
 
     
-    use_wandb = not args.no_wandb
+    use_wandb = (not args.no_wandb) and (wandb is not None)
     if use_wandb:
         wandb.init(
             project=args.wandb_project,
