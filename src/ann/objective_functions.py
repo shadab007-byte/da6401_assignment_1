@@ -12,7 +12,7 @@ def cross_entropy_loss(logits, y_true_onehot):
     loss = -np.sum(y_true_onehot * np.log(probs_clipped)) / batch_size
 
     #d(CE)/d(logit) = softmax_output - one_hot
-    delta = (probs - y_true_onehot)
+    delta = (probs - y_true_onehot) / batch_size
     return loss, delta
 
 
