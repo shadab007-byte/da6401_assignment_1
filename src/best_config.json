@@ -9,8 +9,8 @@
   "weight_init": "xavier",
   "loss": "cross_entropy",
   "weight_decay": 0.0001,
-  "optimizer": "adam",
+  "optimizer": "nadam",
   "learning_rate": 0.001,
   "num_layers": 3,
-  "batch_size": 64
+  "batch_size": 128
 }
