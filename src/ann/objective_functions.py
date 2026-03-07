@@ -6,11 +6,16 @@ from .activations import softmax
 def cross_entropy_loss(logits, y_true_onehot):
     
     batch_size = logits.shape[0]
+
+    # Handle both integer labels and one-hot
+    if y_true_onehot.ndim == 1:
+        y_oh = np.zeros((batch_size, logits.shape[1]))
+        y_oh[np.arange(batch_size), y_true_onehot.astype(int)] = 1.0
+        y_true_onehot = y_oh
+
     probs = softmax(logits)
     probs_clipped = np.clip(probs, 1e-12, 1.0)        
-
     loss = -np.sum(y_true_onehot * np.log(probs_clipped)) / batch_size
-
     #d(CE)/d(logit) = softmax_output - one_hot
     delta = (probs - y_true_onehot) 
     return loss, delta
