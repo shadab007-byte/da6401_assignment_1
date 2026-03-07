@@ -43,7 +43,7 @@ def load_model(model_path):
     Load trained model from disk.
     Returns raw weights dict as per updated instructions.
     """
-    data = np.load(model_path, allow_pickle=True).item()
+    data = np.load(model_path, allow_pickle=True).tolist()
     return data
 
 
