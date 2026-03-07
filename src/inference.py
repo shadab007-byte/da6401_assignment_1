@@ -13,11 +13,12 @@ from utils.metrics import compute_metrics
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Run inference on test set')
+
     parser.add_argument('--model_path', type=str, default='src/best_model.npy')
     parser.add_argument('-d', '--dataset', type=str, default='mnist',
                         choices=['mnist', 'fashion_mnist'])
     parser.add_argument('-nhl', '--num_layers', type=int, default=3)
-    parser.add_argument('-sz', '--hidden_size', type=int, nargs='+', default=[128, 128, 128])
+    parser.add_argument('-sz', '--hidden_size', type=int, nargs='+', default=[128])
     parser.add_argument('-a', '--activation', type=str, default='relu',
                         choices=['relu', 'sigmoid', 'tanh'])
     parser.add_argument('-w_i', '--weight_init', type=str, default='xavier',
@@ -25,7 +26,7 @@ def parse_arguments():
     parser.add_argument('-l', '--loss', type=str, default='cross_entropy',
                         choices=['cross_entropy', 'mse'])
     parser.add_argument('-wd', '--weight_decay', type=float, default=0.0001)
-    parser.add_argument('-o', '--optimizer', type=str, default='sgd',
+    parser.add_argument('-o', '--optimizer', type=str, default='nadam',
                         choices=['sgd', 'momentum', 'nag', 'rmsprop'])
     parser.add_argument('-lr', '--learning_rate', type=float, default=0.001)
     parser.add_argument('-b', '--batch_size', type=int, default=64)
@@ -33,13 +34,16 @@ def parse_arguments():
     parser.add_argument('-we', '--wandb_entity', type=str, default='iitm_assigment')
     parser.add_argument('--split', type=str, default='test',
                         choices=['test', 'val', 'train'])
+
     return parser.parse_args()
 
 
 def load_model(model_path):
-    """Load trained model from disk. Returns raw weights dict."""
-    data = np.load(model_path, allow_pickle=True)
-    data = data.tolist()
+    """
+    Load trained model from disk.
+    Returns raw weights dict as per updated instructions.
+    """
+    data = np.load(model_path, allow_pickle=True).item()
     return data
 
 
@@ -49,6 +53,7 @@ def evaluate_model(model, X_test, y_test):
     loss, _     = model.loss_fn(logits, y_onehot)
     predictions = np.argmax(logits, axis=1)
     metrics     = compute_metrics(y_test, predictions)
+
     return {
         'logits':    logits,
         'loss':      float(loss),
@@ -62,14 +67,37 @@ def evaluate_model(model, X_test, y_test):
 def main():
     args = parse_arguments()
 
-    # Exact PDF pattern
-    model = NeuralNetwork(cli_args=args)
+    # Load raw weights dict
     weights = load_model(args.model_path)
-    model.set_weights(weights)
-    best_weights = model.get_weights()
-    np.save(args.model_path, best_weights)
 
-    dataset_name = args.dataset
+    # Find config
+    config = {}
+    for config_path in [
+        'src/best_config.json',
+        'models/best_config.json',
+        'best_config.json',
+        os.path.join(os.path.dirname(args.model_path), 'best_config.json'),
+    ]:
+        if os.path.exists(config_path):
+            with open(config_path) as f:
+                config = json.load(f)
+            print(f"[INFO] Config loaded from: {config_path}")
+            break
+
+    # Build model from config
+    import argparse as _ap
+    model_args = _ap.Namespace(
+        num_layers   = len(config.get('hidden_sizes', [128, 128, 128])),
+        hidden_size  = config.get('hidden_sizes',    [128, 128, 128]),
+        activation   = config.get('activation',      'relu'),
+        weight_init  = config.get('weight_init',     'xavier'),
+        loss         = config.get('loss',             'cross_entropy'),
+        weight_decay = config.get('weight_decay',     0.0),
+    )
+    model = NeuralNetwork(cli_args=model_args)
+    model.set_weights(weights)
+
+    dataset_name = args.dataset or config.get('dataset', 'mnist')
     X_train, y_train, X_val, y_val, X_test, y_test = load_dataset(dataset_name)
 
     split_data = {
@@ -96,6 +124,7 @@ def main():
 
     predictions = np.argmax(results['logits'], axis=1)
     class_names = get_class_names(dataset_name)
+
     print("\nPer-Class Accuracy:")
     for i, name in enumerate(class_names):
         mask      = (y_eval == i)
