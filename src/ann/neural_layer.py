@@ -63,9 +63,9 @@ class Layer:
         
         batch_size = self.input.shape[0]
   
-        self.grad_W = (self.input.T @ delta) 
+        self.grad_W = (self.input.T @ delta) / batch_size
   
-        self.grad_b = np.sum(delta, axis=0, keepdims=True) 
+        self.grad_b = np.sum(delta, axis=0, keepdims=True) / batch_size
 
         delta_prev = delta @ self.W.T
         return delta_prev
