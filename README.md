@@ -24,7 +24,7 @@ da6401_assignment_1/
 │   ├── train.py                     # Training CLI script
 │   └── inference.py                 # Inference CLI script
 ├── models/
-│   ├── best_model.npy               # Best model weights (by validation F1)
+│   ├── best_model.npy               # Best model weights 
 │   └── best_config.json             # Best model configuration
 ├── notebooks/
 │   └── da6401_colab.ipynb           # Full experiment notebook (all W&B questions)
